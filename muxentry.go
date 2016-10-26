@@ -73,14 +73,19 @@ func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
 
 func (e *muxEntry) Find(path []byte, param PathParam) *muxEntry {
 	path = e.trimSlash(path)
-
-	fields := bytes.Split(path, slash)
 	me := e
-	for _, field := range fields {
+	var idx int
+	for idx > -1 {
 		if me == nil {
 			return nil
 		}
-		me = me.find(field, param)
+		idx = bytes.Index(path, slash)
+		if idx > 0 {
+			me = me.find(path[:idx], param)
+			path = path[idx+1:]
+		} else {
+			me = me.find(path, param)
+		}
 	}
 	if me == e {
 		me = nil
