@@ -26,3 +26,7 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 func (c *Context) Var(alias string) []byte {
 	return c.pathParam[alias]
 }
+
+func (c *Context) Write(data []byte) {
+	c.w.Write(data)
+}
