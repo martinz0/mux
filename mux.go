@@ -9,12 +9,12 @@ type Mux interface {
 }
 
 type mux struct {
-	entry      *muxEntry
+	entry *muxEntry
 }
 
 func New() Mux {
 	return &mux{
-		entry:      NewMuxEntry(),
+		entry: NewMuxEntry(),
 	}
 }
 
@@ -23,7 +23,7 @@ func (m *mux) Get(path string, handler Handler, middleware ...Middleware) {
 }
 
 func (m *mux) handle(method, path string, handler Handler, middleware ...Middleware) {
-	for i := len(middleware)-1; i >= 0; i-- {
+	for i := len(middleware) - 1; i >= 0; i-- {
 		handler = middleware[i](handler)
 	}
 	m.entry.Add(method, []byte(path), handler)
@@ -31,5 +31,5 @@ func (m *mux) handle(method, path string, handler Handler, middleware ...Middlew
 
 func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := NewContext(w, r)
-	m.entry.Lookup(r.Method, []byte(r.URL.Path))(ctx)
+	m.entry.Lookup(r.Method, []byte(r.URL.Path), ctx.pathParam)(ctx)
 }

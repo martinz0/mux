@@ -12,6 +12,7 @@ var (
 		return func(ctx *Context) {
 			defer func() {
 				if err := recover(); err != nil {
+					log.Println(err)
 					return
 				}
 			}()

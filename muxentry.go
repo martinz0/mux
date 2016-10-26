@@ -7,6 +7,8 @@ import (
 type muxEntry struct {
 	// the front part of path
 	part []byte
+	// :alias
+	alias []byte
 	// methods and assoicated handlers
 	entries []*entry
 	// trie
@@ -26,23 +28,30 @@ func NewMuxEntry() *muxEntry {
 	}
 }
 
+func (e *muxEntry) setAlias(alias []byte) {
+	if len(e.alias) > 0 {
+		panic("the muxEntry part alias set")
+	}
+	e.alias = alias
+}
+
 func (e *muxEntry) trimSlash(path []byte) []byte {
 	path = bytes.TrimPrefix(path, []byte{'/'})
 	path = bytes.TrimSuffix(path, []byte{'/'})
 	return path
 }
 
-func (e *muxEntry) Lookup(method string, path []byte) Handler {
+func (e *muxEntry) Lookup(method string, path []byte, param PathParam) Handler {
 	path = e.trimSlash(path)
-	h := e.lookup(method, path)
+	h := e.lookup(method, path, param)
 	if h == nil {
 		h = NotFoundHandler
 	}
 	return h
 }
 
-func (e *muxEntry) lookup(method string, path []byte) Handler {
-	me := e.Find(path)
+func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
+	me := e.Find(path, param)
 	if me == nil {
 		return nil
 	}
@@ -54,7 +63,7 @@ func (e *muxEntry) lookup(method string, path []byte) Handler {
 	return nil
 }
 
-func (e *muxEntry) Find(path []byte) *muxEntry {
+func (e *muxEntry) Find(path []byte, param PathParam) *muxEntry {
 	path = e.trimSlash(path)
 
 	fields := bytes.Split(path, []byte{'/'})
@@ -63,7 +72,7 @@ func (e *muxEntry) Find(path []byte) *muxEntry {
 		if me == nil {
 			return nil
 		}
-		me = me.find(field)
+		me = me.find(field, param)
 	}
 	if me == e {
 		me = nil
@@ -71,10 +80,20 @@ func (e *muxEntry) Find(path []byte) *muxEntry {
 	return me
 }
 
-func (e *muxEntry) find(path []byte) *muxEntry {
+func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
 	for _, node := range e.nodes {
 		if bytes.Equal(node.part, path) {
 			return node
+		}
+	}
+	if !bytes.Equal(path, []byte("_:_")) {
+		for _, node := range e.nodes {
+			if bytes.Equal(node.part, []byte("_:_")) {
+				if param != nil {
+					param[string(node.alias)] = path
+				}
+				return node
+			}
 		}
 	}
 	return nil
@@ -99,19 +118,28 @@ func (e *muxEntry) add(path []byte) *muxEntry {
 		fields = bytes.Split(path, []byte{'/'})
 	)
 	for idx, field = range fields {
-		m := me.find(field)
+		if len(field) > 1 && field[0] == ':' {
+			field = []byte("_:_")
+		}
+		m := me.find(field, nil)
 		if m == nil {
 			idx--
 			break
 		}
+		m.setAlias(fields[idx][1:])
 		me = m
 	}
 	if idx < len(fields)-1 {
 		for _, field := range fields[idx+1:] {
 			nm := &muxEntry{
-				part:    field,
 				entries: make([]*entry, 0),
 				nodes:   make([]*muxEntry, 0),
+			}
+			if len(field) > 1 && field[0] == ':' {
+				nm.part = []byte("_:_")
+				nm.setAlias(field[1:])
+			} else {
+				nm.part = field
 			}
 			me.nodes = append(me.nodes, nm)
 			me = nm
