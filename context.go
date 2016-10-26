@@ -8,6 +8,14 @@ import (
 type Context struct {
 	context.Context
 
-	http.Request
-	http.ResponseWriter
+	r *http.Request
+	w http.ResponseWriter
+}
+
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	return &Context{
+		Context: context.Background(),
+		r: r,
+		w: w,
+	}
 }
