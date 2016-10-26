@@ -4,6 +4,12 @@ import (
 	"bytes"
 )
 
+var (
+	slash            = []byte{'/'}
+	aliasHolder      = []byte("_:_")
+	aliasPrefix byte = ':'
+)
+
 type muxEntry struct {
 	// the front part of path
 	part []byte
@@ -38,8 +44,8 @@ func (e *muxEntry) setAlias(alias []byte) {
 }
 
 func (e *muxEntry) trimSlash(path []byte) []byte {
-	path = bytes.TrimPrefix(path, []byte{'/'})
-	path = bytes.TrimSuffix(path, []byte{'/'})
+	path = bytes.TrimPrefix(path, slash)
+	path = bytes.TrimSuffix(path, slash)
 	return path
 }
 
@@ -68,7 +74,7 @@ func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
 func (e *muxEntry) Find(path []byte, param PathParam) *muxEntry {
 	path = e.trimSlash(path)
 
-	fields := bytes.Split(path, []byte{'/'})
+	fields := bytes.Split(path, slash)
 	me := e
 	for _, field := range fields {
 		if me == nil {
@@ -88,9 +94,9 @@ func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
 			return node
 		}
 	}
-	if !bytes.Equal(path, []byte("_:_")) {
+	if !bytes.Equal(path, aliasHolder) {
 		for _, node := range e.nodes {
-			if bytes.Equal(node.part, []byte("_:_")) {
+			if bytes.Equal(node.part, aliasHolder) {
 				if param != nil {
 					param[string(node.alias)] = bytes.TrimSpace(path)
 				}
@@ -117,18 +123,18 @@ func (e *muxEntry) add(path []byte) *muxEntry {
 		me     = e
 		idx    int
 		field  []byte
-		fields = bytes.Split(path, []byte{'/'})
+		fields = bytes.Split(path, slash)
 	)
 	for idx, field = range fields {
-		if len(field) > 1 && field[0] == ':' {
-			field = []byte("_:_")
+		if len(field) > 1 && field[0] == aliasPrefix {
+			field = aliasHolder
 		}
 		m := me.find(field, nil)
 		if m == nil {
 			idx--
 			break
 		}
-		if bytes.Equal(field, []byte("_:_")) {
+		if bytes.Equal(field, aliasHolder) {
 			m.setAlias(fields[idx][1:])
 		}
 		me = m
@@ -139,8 +145,8 @@ func (e *muxEntry) add(path []byte) *muxEntry {
 				entries: make([]*entry, 0),
 				nodes:   make([]*muxEntry, 0),
 			}
-			if len(field) > 1 && field[0] == ':' {
-				nm.part = []byte("_:_")
+			if len(field) > 1 && field[0] == aliasPrefix {
+				nm.part = aliasHolder
 				nm.setAlias(field[1:])
 			} else {
 				nm.part = field
