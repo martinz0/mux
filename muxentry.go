@@ -18,6 +18,14 @@ type entry struct {
 	handler Handler
 }
 
+func NewMuxEntry() *muxEntry {
+	return &muxEntry{
+		part:    make([]byte, 0),
+		entries: make([]*entry, 0),
+		nodes:   make([]*muxEntry, 0),
+	}
+}
+
 func (e *muxEntry) addNode(node *muxEntry) {
 	if e.nodes == nil {
 		e.nodes = make([]*muxEntry, 0)
@@ -25,42 +33,96 @@ func (e *muxEntry) addNode(node *muxEntry) {
 	e.nodes = append(e.nodes, node)
 }
 
-func (e *muxEntry) Lookup(method string, path []byte) Handler {
-	if len(path) == 0 || bytes.Equal(path, []byte{'/'}) {
-		return NotFoundHandler
-	}
+func (e *muxEntry) trimSlash(path []byte) []byte {
 	path = bytes.TrimPrefix(path, []byte{'/'})
 	path = bytes.TrimSuffix(path, []byte{'/'})
+	return path
+}
 
+func (e *muxEntry) Lookup(method string, path []byte) Handler {
+	path = e.trimSlash(path)
 	h := e.lookup(method, path)
 	if h == nil {
-		return NotFoundHandler
+		h = NotFoundHandler
 	}
 	return h
 }
 
 func (e *muxEntry) lookup(method string, path []byte) Handler {
-	idx := bytes.Index(path, []byte{'/'})
-	if idx == -1 {
-		if bytes.Equal(e.part, path) {
-			for _, entry := range e.entries {
-				if entry.method == method {
-					return entry.handler
-				}
-			}
-		}
-	} else {
-		part := path[:idx]
-		if bytes.Equal(e.part, part) {
-			for _, node := range e.nodes {
-				path = path[idx+1:]
-				h := node.lookup(method, path)
-				if h == nil {
-					continue
-				}
-				return h
-			}
+	me := e.Find(path)
+	if me == nil {
+		return nil
+	}
+	for _, entry := range me.entries {
+		if entry.method == method {
+			return entry.handler
 		}
 	}
 	return nil
+}
+
+func (e *muxEntry) Find(path []byte) *muxEntry {
+	path = e.trimSlash(path)
+
+	fields := bytes.Split(path, []byte{'/'})
+	me := e
+	for _, field := range fields {
+		if me == nil {
+			return nil
+		}
+		me = me.find(field)
+	}
+	if me == e {
+		me = nil
+	}
+	return me
+}
+
+func (e *muxEntry) find(path []byte) *muxEntry {
+	for _, node := range e.nodes {
+		if bytes.Equal(node.part, path) {
+			return node
+		}
+	}
+	return nil
+}
+
+func (e *muxEntry) Add(method string, path []byte, handler Handler) {
+	path = e.trimSlash(path)
+	me := e.add(path)
+	for _, entry := range me.entries {
+		if entry.method == method {
+			panic("muxEntry: add duplicate entry")
+		}
+	}
+	me.entries = append(me.entries, &entry{method, handler})
+}
+
+func (e *muxEntry) add(path []byte) *muxEntry {
+	var (
+		me     = e
+		idx    int
+		field  []byte
+		fields = bytes.Split(path, []byte{'/'})
+	)
+	for idx, field = range fields {
+		m := me.find(field)
+		if m == nil {
+			idx--
+			break
+		}
+		me = m
+	}
+	if idx < len(fields)-1 {
+		for _, field := range fields[idx+1:] {
+			nm := &muxEntry{
+				part:    field,
+				entries: make([]*entry, 0),
+				nodes:   make([]*muxEntry, 0),
+			}
+			me.nodes = append(me.nodes, nm)
+			me = nm
+		}
+	}
+	return me
 }

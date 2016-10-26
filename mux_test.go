@@ -2,35 +2,23 @@ package mux
 
 import (
 	"fmt"
-	"time"
 	"testing"
+	"time"
 )
 
-var me *muxEntry
+var m *muxEntry
+
 func init() {
-	me = &muxEntry{
-		part: []byte("smartcampus"),
-		entries: []*entry{
-			{"GET", func(Context){println("GET /smartcampus")}},
-		},
-	}
-	me.addNode(&muxEntry{
-		part: []byte("v1"),
-		entries: []*entry{
-			{"GET", func(Context){println("GET /smartcampus/v1")}},
-		},
-	})
+	m = NewMuxEntry()
+	m.Add("GET", []byte("smartcampus/v1/teachers/classes"), TestHandler)
 }
 
 func TestMux(t *testing.T) {
 	b := time.Now()
-	h := me.Lookup("GET", []byte("/smartcampu"))
-	h(Context{})
-	h = me.Lookup("GET", []byte("/smartcampus"))
-	h(Context{})
-	h = me.Lookup("GET", []byte("/smartcampus/v1"))
-	h(Context{})
-	h = me.Lookup("GET", []byte("/smartcampus/v2"))
-	h(Context{})
+	m.Lookup("GET", []byte("/smartcampu"))(Context{})
+	m.Lookup("GET", []byte("/smartcampus"))(Context{})
+	m.Lookup("GET", []byte("/smartcampus/v1"))(Context{})
+	m.Lookup("GET", []byte("/smartcampus/v2"))(Context{})
+	m.Lookup("GET", []byte("/smartcampus/v1/teachers/classes"))(Context{})
 	fmt.Println(time.Since(b))
 }
