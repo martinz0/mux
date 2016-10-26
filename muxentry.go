@@ -26,13 +26,6 @@ func NewMuxEntry() *muxEntry {
 	}
 }
 
-func (e *muxEntry) addNode(node *muxEntry) {
-	if e.nodes == nil {
-		e.nodes = make([]*muxEntry, 0)
-	}
-	e.nodes = append(e.nodes, node)
-}
-
 func (e *muxEntry) trimSlash(path []byte) []byte {
 	path = bytes.TrimPrefix(path, []byte{'/'})
 	path = bytes.TrimSuffix(path, []byte{'/'})
