@@ -90,7 +90,7 @@ func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
 		for _, node := range e.nodes {
 			if bytes.Equal(node.part, []byte("_:_")) {
 				if param != nil {
-					param[string(node.alias)] = path
+					param[string(node.alias)] = bytes.TrimSpace(path)
 				}
 				return node
 			}
