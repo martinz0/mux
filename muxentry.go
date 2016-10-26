@@ -5,6 +5,10 @@ import (
 )
 
 type muxEntry struct {
+	// group attrs, just avaliable in group
+	groupPrefix     string
+	groupMiddleware []Middleware
+
 	// the front part of path
 	part []byte
 	// :alias

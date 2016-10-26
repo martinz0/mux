@@ -2,16 +2,20 @@ package mux
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
-	"net/http"
 )
 
 var m Mux
 
 func init() {
 	m = New()
-	m.Get("/smartcampus/v1/teachers/:teacher_id/classes/:class_id/students/:student_id", TestHandler, Log, PanicRecover)
+	// m.Get("/smartcampus/v1/teachers/:teacher_id/classes/:class_id/students/:student_id", TestHandler, Log, PanicRecover)
+
+	g := m.Group("/smartcampus/v1", Log, PanicRecover)
+	g.Get("/teachers/:teacher_id/classes", TestHandler)
+
 	http.ListenAndServe(":1234", m)
 }
 
