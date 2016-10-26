@@ -5,10 +5,6 @@ import (
 )
 
 type muxEntry struct {
-	// group attrs, just avaliable in group
-	groupPrefix     string
-	groupMiddleware []Middleware
-
 	// the front part of path
 	part []byte
 	// :alias
@@ -33,10 +29,12 @@ func NewMuxEntry() *muxEntry {
 }
 
 func (e *muxEntry) setAlias(alias []byte) {
-	if len(e.alias) > 0 {
+	if len(e.alias) == 0 {
+		e.alias = alias
+	}
+	if len(e.alias) > 0 && !bytes.Equal(e.alias, alias) {
 		panic("the muxEntry part alias set")
 	}
-	e.alias = alias
 }
 
 func (e *muxEntry) trimSlash(path []byte) []byte {
@@ -130,7 +128,9 @@ func (e *muxEntry) add(path []byte) *muxEntry {
 			idx--
 			break
 		}
-		m.setAlias(fields[idx][1:])
+		if bytes.Equal(field, []byte("_:_")) {
+			m.setAlias(fields[idx][1:])
+		}
 		me = m
 	}
 	if idx < len(fields)-1 {
