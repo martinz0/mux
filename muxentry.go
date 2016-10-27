@@ -59,7 +59,7 @@ func (e *muxEntry) Lookup(method string, path []byte, param PathParam) Handler {
 }
 
 func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
-	me := e.Find(path, param)
+	me := e.findPath(path, param)
 	if me == nil {
 		return nil
 	}
@@ -71,15 +71,15 @@ func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
 	return nil
 }
 
-func (e *muxEntry) Find(path []byte, param PathParam) *muxEntry {
-	path = e.trimSlash(path)
+func (e *muxEntry) findPath(path []byte, param PathParam) *muxEntry {
 	me := e
+
 	var idx int
 	for idx > -1 {
 		if me == nil {
 			return nil
 		}
-		idx = bytes.Index(path, slash)
+		idx = bytes.IndexByte(path, '/')
 		if idx > 0 {
 			me = me.find(path[:idx], param)
 			path = path[idx+1:]
