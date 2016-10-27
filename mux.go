@@ -2,37 +2,26 @@ package mux
 
 import "net/http"
 
-type Mux interface {
-	http.Handler
-
-	Group(path string, f func(m Mux), middleware ...Middleware)
-
-	Get(path string, handler Handler, middleware ...Middleware)
-	Post(path string, handler Handler, middleware ...Middleware)
-	Put(path string, handler Handler, middleware ...Middleware)
-	Delete(path string, handler Handler, middleware ...Middleware)
-}
-
-type mux struct {
+type Mux struct {
 	entry *muxEntry
 
 	prefix     string
 	middleware []Middleware
 }
 
-func New() Mux {
-	return &mux{
+func New() *Mux {
+	return &Mux{
 		entry:      NewMuxEntry(),
 		middleware: make([]Middleware, 0),
 	}
 }
 
-func (m *mux) Group(path string, f func(m Mux), middleware ...Middleware) {
+func (m *Mux) Group(path string, f func(m *Mux), middleware ...Middleware) {
 	nm := m.Mux(path, middleware...)
 	f(nm)
 }
 
-func (m *mux) Mux(path string, middleware ...Middleware) Mux {
+func (m *Mux) Mux(path string, middleware ...Middleware) *Mux {
 	nm := m.dup()
 	nm.prefix = m.prefix + path
 	nm.middleware = append(nm.middleware, m.middleware...)
@@ -40,29 +29,29 @@ func (m *mux) Mux(path string, middleware ...Middleware) Mux {
 	return nm
 }
 
-func (m *mux) dup() *mux {
-	nm := new(mux)
+func (m *Mux) dup() *Mux {
+	nm := new(Mux)
 	nm.entry = m.entry
 	return nm
 }
 
-func (m *mux) Get(path string, handler Handler, middleware ...Middleware) {
+func (m *Mux) Get(path string, handler Handler, middleware ...Middleware) {
 	m.handle("GET", path, handler, middleware...)
 }
 
-func (m *mux) Post(path string, handler Handler, middleware ...Middleware) {
+func (m *Mux) Post(path string, handler Handler, middleware ...Middleware) {
 	m.handle("POST", path, handler, middleware...)
 }
 
-func (m *mux) Put(path string, handler Handler, middleware ...Middleware) {
+func (m *Mux) Put(path string, handler Handler, middleware ...Middleware) {
 	m.handle("PUT", path, handler, middleware...)
 }
 
-func (m *mux) Delete(path string, handler Handler, middleware ...Middleware) {
+func (m *Mux) Delete(path string, handler Handler, middleware ...Middleware) {
 	m.handle("DELETE", path, handler, middleware...)
 }
 
-func (m *mux) handle(method, path string, handler Handler, middleware ...Middleware) {
+func (m *Mux) handle(method, path string, handler Handler, middleware ...Middleware) {
 	for i := len(middleware) - 1; i >= 0; i-- {
 		handler = middleware[i](handler)
 	}
@@ -70,11 +59,11 @@ func (m *mux) handle(method, path string, handler Handler, middleware ...Middlew
 		handler = m.middleware[i](handler)
 	}
 	path = m.prefix + path
-	m.entry.Add(method, []byte(path), handler)
+	m.entry.Add([]byte(method), []byte(path), handler)
 }
 
-func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := NewContext(w, r)
 	defer ctx.Done()
-	m.entry.Lookup(r.Method, []byte(r.URL.Path), ctx.pathParam)(ctx)
+	m.entry.Lookup([]byte(r.Method), []byte(r.URL.Path), ctx.pathParams)(ctx)
 }

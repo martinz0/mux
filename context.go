@@ -1,10 +1,10 @@
 package mux
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type Context struct {
@@ -13,18 +13,18 @@ type Context struct {
 	r *http.Request
 	w http.ResponseWriter
 
-	pathParam  PathParam
-	queryParam QueryParam
-	body       []byte
+	pathParams  *params
+	queryParams *params
+	body        []byte
 
 	response []byte
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	r.ParseForm()
-	queryParam := NewQueryParam()
+	query := NewParams()
 	for key, _ := range r.Form {
-		queryParam[strings.TrimSpace(key)] = strings.TrimSpace(r.Form.Get(key))
+		query.Set(bytes.TrimSpace([]byte(key)), bytes.TrimSpace([]byte(r.Form.Get(key))))
 	}
 
 	var data []byte
@@ -33,17 +33,13 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	return &Context{
-		Context:    context.Background(),
-		r:          r,
-		w:          w,
-		pathParam:  NewPathParam(),
-		queryParam: queryParam,
-		body:       data,
+		Context:     context.Background(),
+		r:           r,
+		w:           w,
+		pathParams:  NewParams(),
+		queryParams: query,
+		body:        data,
 	}
-}
-
-func (c *Context) Var(alias string) []byte {
-	return c.pathParam[alias]
 }
 
 func (c *Context) Write(data []byte) {

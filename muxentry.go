@@ -22,13 +22,12 @@ type muxEntry struct {
 }
 
 type entry struct {
-	method  string
+	method  []byte
 	handler Handler
 }
 
 func NewMuxEntry() *muxEntry {
 	return &muxEntry{
-		part:    make([]byte, 0),
 		entries: make([]*entry, 0),
 		nodes:   make([]*muxEntry, 0),
 	}
@@ -49,29 +48,29 @@ func (e *muxEntry) trimSlash(path []byte) []byte {
 	return path
 }
 
-func (e *muxEntry) Lookup(method string, path []byte, param PathParam) Handler {
+func (e *muxEntry) Lookup(method, path []byte, p *params) Handler {
 	path = e.trimSlash(path)
-	h := e.lookup(method, path, param)
+	h := e.lookup(method, path, p)
 	if h == nil {
 		h = NotFoundHandler
 	}
 	return h
 }
 
-func (e *muxEntry) lookup(method string, path []byte, param PathParam) Handler {
-	me := e.findPath(path, param)
+func (e *muxEntry) lookup(method, path []byte, p *params) Handler {
+	me := e.findPath(path, p)
 	if me == nil {
 		return nil
 	}
 	for _, entry := range me.entries {
-		if entry.method == method {
+		if bytes.Equal(entry.method, method) {
 			return entry.handler
 		}
 	}
 	return nil
 }
 
-func (e *muxEntry) findPath(path []byte, param PathParam) *muxEntry {
+func (e *muxEntry) findPath(path []byte, p *params) *muxEntry {
 	me := e
 
 	var idx int
@@ -81,10 +80,10 @@ func (e *muxEntry) findPath(path []byte, param PathParam) *muxEntry {
 		}
 		idx = bytes.IndexByte(path, '/')
 		if idx > 0 {
-			me = me.find(path[:idx], param)
+			me = me.find(path[:idx], p)
 			path = path[idx+1:]
 		} else {
-			me = me.find(path, param)
+			me = me.find(path, p)
 		}
 	}
 	if me == e {
@@ -93,7 +92,7 @@ func (e *muxEntry) findPath(path []byte, param PathParam) *muxEntry {
 	return me
 }
 
-func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
+func (e *muxEntry) find(path []byte, p *params) *muxEntry {
 	for _, node := range e.nodes {
 		if bytes.Equal(node.part, path) {
 			return node
@@ -102,8 +101,8 @@ func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
 	if !bytes.Equal(path, aliasHolder) {
 		for _, node := range e.nodes {
 			if bytes.Equal(node.part, aliasHolder) {
-				if param != nil {
-					param[string(node.alias)] = bytes.TrimSpace(path)
+				if p != nil {
+					p.Set(node.alias, bytes.TrimSpace(path))
 				}
 				return node
 			}
@@ -112,11 +111,11 @@ func (e *muxEntry) find(path []byte, param PathParam) *muxEntry {
 	return nil
 }
 
-func (e *muxEntry) Add(method string, path []byte, handler Handler) {
+func (e *muxEntry) Add(method, path []byte, handler Handler) {
 	path = e.trimSlash(path)
 	me := e.add(path)
 	for _, entry := range me.entries {
-		if entry.method == method {
+		if bytes.Equal(entry.method, method) {
 			panic("muxEntry: add duplicate entry")
 		}
 	}
