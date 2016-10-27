@@ -75,5 +75,6 @@ func (m *mux) handle(method, path string, handler Handler, middleware ...Middlew
 
 func (m *mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := NewContext(w, r)
+	defer ctx.Done()
 	m.entry.Lookup(r.Method, []byte(r.URL.Path), ctx.pathParam)(ctx)
 }
