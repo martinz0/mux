@@ -17,7 +17,8 @@ type Context struct {
 	queryParams *params
 	body        []byte
 
-	response []byte
+	statusCode int
+	response   []byte
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -33,7 +34,7 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 	}
 
 	return &Context{
-		Context:     context.Background(),
+		Context:     r.Context(),
 		r:           r,
 		w:           w,
 		pathParams:  NewParams(),
@@ -46,6 +47,17 @@ func (c *Context) Write(data []byte) {
 	c.response = data
 }
 
+func (c *Context) WriteHeader(statusCode int) {
+	c.statusCode = statusCode
+}
+
 func (c *Context) Done() {
-	c.w.Write(c.response)
+	if c.w != nil {
+		if c.statusCode > 0 {
+			c.w.WriteHeader(c.statusCode)
+		}
+		if len(c.response) > 0 {
+			c.w.Write(c.response)
+		}
+	}
 }
