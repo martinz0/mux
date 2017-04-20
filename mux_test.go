@@ -1,31 +1,25 @@
 package mux
 
 import (
-	// "time"
 	"net/http"
+	"testing"
 )
 
-var m *Mux
+func TestMux(t *testing.T) {
+	router := New()
+	router.Get("/v1/:id", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(r.Context().Value("_param").(*params).Get([]byte("id")))
+	}))
+	http.ListenAndServe(":1234", router)
+}
 
-func init() {
-	m = New()
-	/*
-		m.Get("/smartcampus/v1/teachers/:teacher_id/classes/:class_id/students", TestHandler, Log)
-		m.Group("/smartcampus/v1", func(nm Mux) {
-			nm.Get("/teachers/:teacher_id/classes", TestHandler)
-			nm.Get("/classes/:class_id/students", TestHandler)
-			nm.Get("/students/:student_id/amends", TestHandler)
-		}, Log, PanicRecover)
-	*/
-
-	m.Group("/smartcampus/v1", func(nm *Mux) {
-		nm.Get("/teachers/:teacher_id/classes/:class_id/students", TestHandler)
-		nm.Get("/students/:student_id", TestHandler)
-		nm.Post("/students/:student_id", TestHandler)
-	})
-
-	http.HandleFunc("/smartcampus/v1/students/1000", func(w http.ResponseWriter, r *http.Request) {
-		// time.Sleep(10 * time.Millisecond)
-	})
-	// http.ListenAndServe(":1234", m)
+func BenchmarkMux(b *testing.B) {
+	b.ReportAllocs()
+	router := New()
+	router.Get("/v1/:id", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}))
+	req, _ := http.NewRequest("GET", "/v1/123", nil)
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(nil, req)
+	}
 }
