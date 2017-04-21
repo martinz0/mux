@@ -1,7 +1,6 @@
 package mux
 
 import (
-	"context"
 	"net/http"
 )
 
@@ -15,32 +14,34 @@ func New() *Mux {
 	}
 }
 
-func (m *Mux) Get(path string, handler http.Handler) {
+type Handler func(w http.ResponseWriter, r *http.Request, ps params)
+
+func (m *Mux) Get(path string, handler Handler) {
 	m.handle("GET", path, handler)
 }
 
-func (m *Mux) Post(path string, handler http.Handler) {
+func (m *Mux) Post(path string, handler Handler) {
 	m.handle("POST", path, handler)
 }
 
-func (m *Mux) Put(path string, handler http.Handler) {
+func (m *Mux) Put(path string, handler Handler) {
 	m.handle("PUT", path, handler)
 }
 
-func (m *Mux) Delete(path string, handler http.Handler) {
+func (m *Mux) Delete(path string, handler Handler) {
 	m.handle("DELETE", path, handler)
 }
 
-func (m *Mux) handle(method, path string, handler http.Handler) {
+func (m *Mux) handle(method, path string, handler Handler) {
 	m.entry.Add([]byte(method), []byte(path), handler)
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var param params
-	handler := m.entry.Lookup([]byte(r.Method), []byte(r.URL.Path), &param)
-	if len(param.params) > 0 {
-		ctx := context.WithValue(r.Context(), "_param", &param)
-		r = r.WithContext(ctx)
+	var ps params
+	handler := m.entry.Lookup([]byte(r.Method), []byte(r.URL.Path), &ps)
+	if handler == nil {
+		http.NotFound(w, r)
+	} else {
+		handler(w, r, ps)
 	}
-	handler.ServeHTTP(w, r)
 }

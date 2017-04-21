@@ -2,7 +2,6 @@ package mux
 
 import (
 	"bytes"
-	"net/http"
 )
 
 var (
@@ -25,7 +24,7 @@ type muxEntry struct {
 
 type entry struct {
 	method  []byte
-	handler http.Handler
+	handler Handler
 }
 
 func NewMuxEntry() *muxEntry {
@@ -50,16 +49,12 @@ func (e *muxEntry) trimSlash(path []byte) []byte {
 	return path
 }
 
-func (e *muxEntry) Lookup(method, path []byte, p *params) http.Handler {
+func (e *muxEntry) Lookup(method, path []byte, p *params) Handler {
 	path = e.trimSlash(path)
-	h := e.lookup(method, path, p)
-	if h == nil {
-		h = http.NotFoundHandler()
-	}
-	return h
+	return e.lookup(method, path, p)
 }
 
-func (e *muxEntry) lookup(method, path []byte, p *params) http.Handler {
+func (e *muxEntry) lookup(method, path []byte, p *params) Handler {
 	me := e.findPath(path, p)
 	if me == nil {
 		return nil
@@ -114,7 +109,7 @@ func (e *muxEntry) find(path []byte, p *params) *muxEntry {
 	return nil
 }
 
-func (e *muxEntry) Add(method, path []byte, handler http.Handler) {
+func (e *muxEntry) Add(method, path []byte, handler Handler) {
 	path = e.trimSlash(path)
 	me := e.add(path)
 	for _, entry := range me.entries {
