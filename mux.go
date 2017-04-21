@@ -10,7 +10,10 @@ type Mux struct {
 
 func New() *Mux {
 	return &Mux{
-		entry: NewMuxEntry(),
+		entry: &muxEntry{
+			entries: make([]*entry, 0),
+			nodes:   make([]*muxEntry, 0),
+		},
 	}
 }
 

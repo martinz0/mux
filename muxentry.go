@@ -42,20 +42,11 @@ type entry struct {
 	handler Handler
 }
 
-func NewMuxEntry() *muxEntry {
-	return &muxEntry{
-		entries: make([]*entry, 0),
-		nodes:   make([]*muxEntry, 0),
-	}
-}
-
 func (e *muxEntry) setAlias(alias string) {
 	if e.alias != "" {
 		panic("the muxEntry part alias set")
 	}
-	if len(e.alias) == 0 {
-		e.alias = alias
-	}
+	e.alias = alias
 }
 
 func (e *muxEntry) trimSlash(path string) string {
