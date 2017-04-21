@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	slash            = []byte{'/'}
-	aliasHolder      = []byte("_:_")
-	aliasPrefix byte = ':'
+	slash              = []byte{'/'}
+	aliasHolder        = []byte("_:_")
+	aliasPrefix   byte = ':'
+	aliasAsterisk      = []byte("*")
 )
 
 type muxEntry struct {
@@ -86,6 +87,9 @@ func (e *muxEntry) findPath(path []byte, p *params) *muxEntry {
 		} else {
 			me = me.find(path, p)
 		}
+		if me != nil && bytes.Equal(me.part, aliasAsterisk) {
+			return me
+		}
 	}
 	if me == e {
 		me = nil
@@ -95,7 +99,7 @@ func (e *muxEntry) findPath(path []byte, p *params) *muxEntry {
 
 func (e *muxEntry) find(path []byte, p *params) *muxEntry {
 	for _, node := range e.nodes {
-		if bytes.Equal(node.part, path) {
+		if bytes.Equal(node.part, aliasAsterisk) || bytes.Equal(node.part, path) {
 			return node
 		}
 	}

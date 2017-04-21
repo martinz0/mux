@@ -2,15 +2,17 @@ package mux
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 func TestMux(t *testing.T) {
 	router := New()
-	router.Get("/v1/:id", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(r.Context().Value("_param").(*params).Get([]byte("id")))
+	router.Get("/v1/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
 	}))
-	http.ListenAndServe(":1234", router)
+	req, _ := http.NewRequest("GET", "/v1/123", nil)
+	router.ServeHTTP(httptest.NewRecorder(), req)
 }
 
 func BenchmarkMux(b *testing.B) {
