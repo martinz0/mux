@@ -112,46 +112,6 @@ func (e *muxEntry) Add(method, path string, handler Handler) {
 	me.entries = append(me.entries, &entry{method, handler})
 }
 
-func (e *muxEntry) add2(path string) *muxEntry {
-	var (
-		me     = e
-		idx    int
-		field  string
-		fields = strings.Split(path, slash)
-	)
-	for idx, field = range fields {
-		if len(field) > 1 && field[0] == aliasPrefix {
-			field = aliasHolder
-		}
-		m := me.find(field, nil)
-		if m == nil {
-			idx--
-			break
-		}
-		if field == aliasHolder {
-			m.setAlias(fields[idx][1:])
-		}
-		me = m
-	}
-	if idx < len(fields)-1 {
-		for _, field := range fields[idx+1:] {
-			nm := &muxEntry{
-				entries: make([]*entry, 0),
-				nodes:   make([]*muxEntry, 0),
-			}
-			if len(field) > 1 && field[0] == aliasPrefix {
-				nm.part = aliasHolder
-				nm.setAlias(field[1:])
-			} else {
-				nm.part = field
-			}
-			me.nodes = append(me.nodes, nm)
-			me = nm
-		}
-	}
-	return me
-}
-
 func (e *muxEntry) add(path string) *muxEntry {
 	if path == "" {
 		return e
