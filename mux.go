@@ -2,6 +2,7 @@ package mux
 
 import (
 	"net/http"
+	"sync"
 )
 
 type Mux struct {
@@ -11,7 +12,7 @@ type Mux struct {
 func New() *Mux {
 	return &Mux{
 		entry: &muxEntry{
-			entries: make([]*entry, 0),
+			entries: make([]entry, 0),
 			nodes:   make([]*muxEntry, 0),
 		},
 	}
@@ -24,11 +25,20 @@ func (m *Mux) Handle(method, path string, handler Handler) {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var ps Params
-	handler := m.entry.Lookup(r.Method, r.URL.Path, &ps)
+	ps := pool.Get().(*Params)
+	*ps = (*ps)[:0]
+	handler := m.entry.Lookup(r.Method, r.URL.Path, ps)
 	if handler == nil {
 		http.NotFound(w, r)
 	} else {
-		handler(w, r, ps)
+		handler(w, r, *ps)
 	}
+	pool.Put(ps)
+}
+
+var pool = sync.Pool{
+	New: func() interface{} {
+		var ps Params
+		return &ps
+	},
 }

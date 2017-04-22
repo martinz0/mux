@@ -1,6 +1,6 @@
 package mux
 
-type Params []*param
+type Params []param
 
 type param struct {
 	key, value string
@@ -16,5 +16,5 @@ func (p Params) Get(key string) string {
 }
 
 func (p *Params) Set(key, value string) {
-	*p = append(*p, &param{key, value})
+	*p = append(*p, param{key, value})
 }

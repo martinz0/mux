@@ -18,7 +18,7 @@ type muxEntry struct {
 	// :alias
 	alias string
 	// methods and assoicated handlers
-	entries []*entry
+	entries []entry
 	// trie
 	nodes []*muxEntry
 }
@@ -109,7 +109,7 @@ func (e *muxEntry) Add(method, path string, handler Handler) {
 			panic("muxEntry: add duplicate entry")
 		}
 	}
-	me.entries = append(me.entries, &entry{method, handler})
+	me.entries = append(me.entries, entry{method, handler})
 }
 
 func (e *muxEntry) add(path string) *muxEntry {
@@ -133,7 +133,7 @@ func (e *muxEntry) addPath(path string) *muxEntry {
 	if node == nil {
 		node = &muxEntry{
 			part:    part,
-			entries: make([]*entry, 0),
+			entries: make([]entry, 0),
 			nodes:   make([]*muxEntry, 0),
 		}
 		if part == aliasHolder {

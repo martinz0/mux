@@ -17,12 +17,23 @@ func TestMux(t *testing.T) {
 	router.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func BenchmarkMux(b *testing.B) {
+func BenchmarkMux_1(b *testing.B) {
 	b.ReportAllocs()
 	router := New()
 	router.Handle("GET", "/v1/v1", func(w http.ResponseWriter, r *http.Request, ps Params) {
 	})
 	req, _ := http.NewRequest("GET", "/v1/v1", nil)
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(nil, req)
+	}
+}
+
+func BenchmarkMux_2(b *testing.B) {
+	b.ReportAllocs()
+	router := New()
+	router.Handle("GET", "/v1/:id", func(w http.ResponseWriter, r *http.Request, ps Params) {
+	})
+	req, _ := http.NewRequest("GET", "/v1/identifier", nil)
 	for i := 0; i < b.N; i++ {
 		router.ServeHTTP(nil, req)
 	}
