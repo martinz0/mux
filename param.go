@@ -18,3 +18,7 @@ func (p Params) Get(key string) string {
 func (p *Params) Set(key, value string) {
 	*p = append(*p, param{key, value})
 }
+
+func (p *Params) reset() {
+	*p = (*p)[:0]
+}

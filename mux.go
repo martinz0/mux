@@ -25,20 +25,22 @@ func (m *Mux) Handle(method, path string, handler Handler) {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ps := pool.Get().(*Params)
-	*ps = (*ps)[:0]
-	handler := m.entry.Lookup(r.Method, r.URL.Path, ps)
-	if handler == nil {
+	var ps *Params
+	handler := m.entry.Lookup(r.Method, r.URL.Path, &ps)
+	switch {
+	case handler == nil:
 		http.NotFound(w, r)
-	} else {
+	case ps == nil:
+		handler(w, r, nil)
+	default:
 		handler(w, r, *ps)
+		(*ps).reset()
+		psPool.Put(ps)
 	}
-	pool.Put(ps)
 }
 
-var pool = sync.Pool{
+var psPool = sync.Pool{
 	New: func() interface{} {
-		var ps Params
-		return &ps
+		return new(Params)
 	},
 }
