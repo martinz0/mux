@@ -1,7 +1,6 @@
 package mux
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -11,8 +10,8 @@ import (
 func TestMux(t *testing.T) {
 	router := New()
 	initRoute(router)
-	fmt.Println(router.entry)
-	req, _ := http.NewRequest("GET", "/", nil)
+	req, _ := http.NewRequest("GET", "/lor/v1/users", nil)
+	router.ServeHTTP(httptest.NewRecorder(), req)
 	router.ServeHTTP(httptest.NewRecorder(), req)
 }
 
@@ -33,6 +32,15 @@ func BenchmarkMux_2(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/lor/v1/users/1/classes/2/teachers/3", nil)
 	for i := 0; i < b.N; i++ {
 		router.ServeHTTP(nil, req)
+	}
+}
+
+func BenchmarkMux_3(b *testing.B) {
+	b.ReportAllocs()
+	router := New()
+	n := initRoute(router)
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(nil, reqs[i%n])
 	}
 }
 
@@ -66,10 +74,22 @@ var testRouterCase = struct {
 	},
 }
 
-func initRoute(r *Mux) {
+func init() {
+	for _, method := range testRouterCase.methods {
+		for _, path := range testRouterCase.paths {
+			req, _ := http.NewRequest(method, path, nil)
+			reqs = append(reqs, req)
+		}
+	}
+}
+
+var reqs []*http.Request
+
+func initRoute(r *Mux) int {
 	for _, method := range testRouterCase.methods {
 		for _, path := range testRouterCase.paths {
 			r.Handle(method, path, func(w http.ResponseWriter, r *http.Request, ps Params) {})
 		}
 	}
+	return len(testRouterCase.methods) * len(testRouterCase.paths)
 }
