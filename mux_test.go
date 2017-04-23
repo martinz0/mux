@@ -10,8 +10,13 @@ import (
 func TestMux(t *testing.T) {
 	router := New()
 	initRoute(router)
-	req, _ := http.NewRequest("GET", "/lor/v1/users", nil)
+	req, _ := http.NewRequest("GET", "/lor/v1/users/1000", nil)
 	router.ServeHTTP(httptest.NewRecorder(), req)
+	req, _ = http.NewRequest("GET", "/lor/v1/users/1000/classes", nil)
+	router.ServeHTTP(httptest.NewRecorder(), req)
+	req, _ = http.NewRequest("GET", "/lor/v1/users/1000/classes/1000", nil)
+	router.ServeHTTP(httptest.NewRecorder(), req)
+	req, _ = http.NewRequest("GET", "/lor/v1/users/1000/classes/1000/teachers", nil)
 	router.ServeHTTP(httptest.NewRecorder(), req)
 }
 
@@ -71,6 +76,50 @@ var testRouterCase = struct {
 		"/lor/v1/users/:uid/classes/:classid/teachers/:teacherid",
 		"/lor/v1/users/:uid/classes/:classid/teachers/:teacherid/classes",
 		"/lor/v1/users/:uid/classes/:classid/teachers/:teacherid/classes/:classid",
+		"/lor/v2",
+		"/lor/v2/users",
+		"/lor/v2/users/:uid",
+		"/lor/v2/users/:uid/name",
+		"/lor/v2/users/:uid/habbit",
+		"/lor/v2/users/:uid/classes",
+		"/lor/v2/users/:uid/classes/:classid",
+		"/lor/v2/users/:uid/classes/:classid/teachers",
+		"/lor/v2/users/:uid/classes/:classid/teachers/:teacherid",
+		"/lor/v2/users/:uid/classes/:classid/teachers/:teacherid/classes",
+		"/lor/v2/users/:uid/classes/:classid/teachers/:teacherid/classes/:classid",
+		"/lor/v3",
+		"/lor/v3/users",
+		"/lor/v3/users/:uid",
+		"/lor/v3/users/:uid/name",
+		"/lor/v3/users/:uid/habbit",
+		"/lor/v3/users/:uid/classes",
+		"/lor/v3/users/:uid/classes/:classid",
+		"/lor/v3/users/:uid/classes/:classid/teachers",
+		"/lor/v3/users/:uid/classes/:classid/teachers/:teacherid",
+		"/lor/v3/users/:uid/classes/:classid/teachers/:teacherid/classes",
+		"/lor/v3/users/:uid/classes/:classid/teachers/:teacherid/classes/:classid",
+		"/lor/v4",
+		"/lor/v4/users",
+		"/lor/v4/users/:uid",
+		"/lor/v4/users/:uid/name",
+		"/lor/v4/users/:uid/habbit",
+		"/lor/v4/users/:uid/classes",
+		"/lor/v4/users/:uid/classes/:classid",
+		"/lor/v4/users/:uid/classes/:classid/teachers",
+		"/lor/v4/users/:uid/classes/:classid/teachers/:teacherid",
+		"/lor/v4/users/:uid/classes/:classid/teachers/:teacherid/classes",
+		"/lor/v4/users/:uid/classes/:classid/teachers/:teacherid/classes/:classid",
+		"/lor/v5",
+		"/lor/v5/users",
+		"/lor/v5/users/:uid",
+		"/lor/v5/users/:uid/name",
+		"/lor/v5/users/:uid/habbit",
+		"/lor/v5/users/:uid/classes",
+		"/lor/v5/users/:uid/classes/:classid",
+		"/lor/v5/users/:uid/classes/:classid/teachers",
+		"/lor/v5/users/:uid/classes/:classid/teachers/:teacherid",
+		"/lor/v5/users/:uid/classes/:classid/teachers/:teacherid/classes",
+		"/lor/v5/users/:uid/classes/:classid/teachers/:teacherid/classes/:classid",
 	},
 }
 

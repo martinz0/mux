@@ -57,7 +57,25 @@ func (e *muxEntry) trimSlash(path string) string {
 
 func (e *muxEntry) Lookup(method, path string, ps **Params) Handler {
 	path = e.trimSlash(path)
-	me := e.findPath(path, ps)
+
+	cmu.Lock()
+	ca, ok := cache.Get(path)
+	cmu.Unlock()
+
+	var me *muxEntry
+	if ok {
+		*ps = ca.(*Cache).ps
+		me = ca.(*Cache).me
+	} else {
+		me = e.findPath(path, ps)
+		cmu.Lock()
+		cache.Add(path, &Cache{
+			me: me,
+			ps: *ps,
+		})
+		cmu.Unlock()
+	}
+
 	if me != nil {
 		for _, entry := range me.entries {
 			if entry.method == method {

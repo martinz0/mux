@@ -34,8 +34,6 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler(w, r, nil)
 	default:
 		handler(w, r, *ps)
-		(*ps).reset()
-		psPool.Put(ps)
 	}
 }
 
