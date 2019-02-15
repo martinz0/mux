@@ -2,6 +2,7 @@ package mux
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -34,9 +35,12 @@ func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var ps *Params
 	handler := m.entry.Lookup(r.Method, r.URL.Path, &ps)
 	if handler == nil {
-		// support http.DefaultServeMux
-		http.DefaultServeMux.ServeHTTP(w, r)
-		return
+		if strings.HasPrefix(r.URL.Path, "/debug/pprof/") {
+			// support net/http/pprof
+			http.DefaultServeMux.ServeHTTP(w, r)
+			return
+		}
+		handler = m.notFound
 	}
 	if ps == nil {
 		handler(w, r, nil)
