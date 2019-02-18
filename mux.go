@@ -2,7 +2,6 @@ package mux
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 )
 
